@@ -1,5 +1,6 @@
 package org.springsecurity.config;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -10,8 +11,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springsecurity.jwt.JWTFilter;
 import org.springsecurity.jwt.JWTUtil;
 import org.springsecurity.jwt.LoginFilter;
+
+import java.util.Collections;
 
 @Configuration  // configuration Bean 등록
 @EnableWebSecurity // Security 를 위한 어노테이션
@@ -46,6 +52,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
+        http
+                .cors((corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
+
+                    @Override
+                    public CorsConfiguration getCorsConfiguration(HttpServletRequest request) {
+
+                        CorsConfiguration configuration = new CorsConfiguration();
+
+                        configuration.setAllowedOrigins(Collections.singletonList("http://localhost:3000")); // 프론트엔드에서 데이터를 보낼 포트 열기
+                        configuration.setAllowedMethods(Collections.singletonList("*"));  // 허용할 메서드 전부 허용
+                        configuration.setAllowCredentials(true); // 프론트엔드에서 Credentials 허용을 할 경우 혀용으로 설정한다.
+                        configuration.setAllowedHeaders(Collections.singletonList("*")); // 프론트엔드에서 보내는 헤더 전부 허용
+                        configuration.setMaxAge(3600L); // 허용하고 있을 시간
+
+                        configuration.setExposedHeaders(Collections.singletonList("Authorization")); // 백에서 프론트로 보내줄때 헤더에 Authorization에 넣어서 보내주기 때문에 허용 시킨다.
+
+                        return configuration;
+                    }
+                })));
+
 
 
         //csrf disable
@@ -75,6 +101,11 @@ public class SecurityConfig {
         //필터 추가 LoginFilter()는 인자를 받음 (AuthenticationManager() 메소드에 authenticationConfiguration 객체를 넣어야 함) 따라서 등록 필요
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
+
+        //JWTFilter 등록
+        http
+                .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
+
 
         //세션 설정
         http
