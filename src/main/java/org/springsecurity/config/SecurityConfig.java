@@ -34,7 +34,8 @@ public class SecurityConfig {
         this.jwtUtil = jwtUtil;
     }
 
-    //AuthenticationManager Bean 등록
+    // AuthenticationManager Bean 등록
+    // 인증담당, 유효성 검사
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
 
@@ -51,6 +52,8 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+        // 프론트엔드와의 충돌 방지
 
         http
                 .cors((corsCustomizer -> corsCustomizer.configurationSource(new CorsConfigurationSource() {
@@ -93,19 +96,17 @@ public class SecurityConfig {
         //경로별 인가 작업 (특정한 경로에 대하여 권한이 있는 사용자만 접근 가능하게 설정한다.)
         http
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/login", "/", "/join").permitAll()
+                        .requestMatchers("/login", "/", "/join","/home").permitAll()
                         .requestMatchers("/admin").hasRole("ADMIN")
-                        .requestMatchers("/user").hasRole("USER")
-                        .anyRequest().authenticated()); // 위의 세 개의 경로를 제외한 다른 경로는 로그인한 사용자만 접근 가능!
+                        .anyRequest().authenticated()); // 위의 경로를 제외한 다른 경로는 로그인한 사용자만 접근 가능!
 
         //필터 추가 LoginFilter()는 인자를 받음 (AuthenticationManager() 메소드에 authenticationConfiguration 객체를 넣어야 함) 따라서 등록 필요
         http
                 .addFilterAt(new LoginFilter(authenticationManager(authenticationConfiguration), jwtUtil), UsernamePasswordAuthenticationFilter.class);
 
-        //JWTFilter 등록
+        //JWTFilter 등록 JWTFilter 실행후 -> LoginFilter 실행
         http
                 .addFilterBefore(new JWTFilter(jwtUtil), LoginFilter.class);
-
 
         //세션 설정
         http

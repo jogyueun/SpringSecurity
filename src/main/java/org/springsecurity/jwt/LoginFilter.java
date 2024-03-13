@@ -27,15 +27,15 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         this.jwtUtil = jwtUtil;
     }
 
+    // 클라이언트 요청에서 username과 password를 추출합니다.
+    // Spring Security의 UsernamePasswordAuthenticationToken 객체를 생성하여 username과 password를 담고, 인증 매니저에게 전달합니다.
+    // 인증 매니저는 전달된 토큰을 사용하여 실제 인증을 수행하고, 인증된 사용자의 인증 정보를 반환합니다.
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
 
         //클라이언트 요청에서 username, password 추출
         String username = obtainUsername(request);
         String password = obtainPassword(request);
-
-        System.out.println(username);
-        System.out.println(password);
 
         //스프링 시큐리티에서 username과 password를 검증하기 위해서는 token에 담아야 함
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, password, null);
@@ -44,10 +44,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         return authenticationManager.authenticate(authToken);
     }
 
-    //로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
+    // 로그인 성공시 실행하는 메소드 (여기서 JWT를 발급하면 됨)
+    // Authentication 객체에서 사용자 정보를 추출합니다.
+    // 추출된 사용자 정보를 기반으로 JWT 토큰을 생성합니다. JWTUtil의 createJwt 메서드를 사용하여 JWT를 생성합니다.
+    // 생성된 JWT를 HTTP 응답 헤더에 추가하여 클라이언트에게 전달합니다.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authentication) {
-        //UserDetailsS
+
         CustomUserDetails customUserDetails = (CustomUserDetails) authentication.getPrincipal();
 
         String username = customUserDetails.getUsername();
